@@ -1,0 +1,4 @@
+docker build -t sentiment-api:v1 .
+
+# Run
+docker run -d -p 8000:8000 --name sentiment-app sentiment-api:v1
