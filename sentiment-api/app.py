@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
+# Import joblib library for loading trained ML models from disk
 import joblib
 import numpy as np
 from typing import Optional
@@ -23,6 +24,21 @@ vectorizer = joblib.load(BASE_DIR / 'vectorizer.pkl')
 
 
 sentiment_labels = {0: 'Negative', 1: 'Neutral', 2: 'Positive'}
+
+
+# These two classes define the data schemas for incoming requests and outgoing responses 
+# in the sentiment analysis API. 
+# 
+# - PredictionRequest: Specifies the expected structure for input data, ensuring that 
+#   a 'text' field (and optionally a 'user_id') is present in requests to the /predict endpoint. 
+#   Using BaseModel from pydantic enables automatic validation and error handling.
+#
+# - PredictionResponse: Describes the format of the API response from the /predict endpoint, 
+#   detailing which fields (the original text, its predicted sentiment, and confidence score) 
+#   are returned to the client. This also helps with documentation and type safety.
+# 
+# These classes improve maintainability, clarity, and robustness of the API.
+
 
 class PredictionRequest(BaseModel):
     text: str
