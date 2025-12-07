@@ -1,0 +1,8 @@
+pycache
+*.pycache
+*.pyo
+*.pyd
+.Python
+*.db
+.git
+.gitignore
