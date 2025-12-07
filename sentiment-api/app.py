@@ -4,9 +4,15 @@ import joblib
 import numpy as np
 from typing import Optional
 from pathlib import Path
+from database import get_connection ,get_history ,save_predictions ,create_table
 
 # APP Initialization
 app = FastAPI(title="Sentiment ANalysis API", version="1.0" )
+
+@app.on_event("startup")
+def startup():
+    create_table()
+    print("Database Ready!")
 
 # Get the directory where this app.py file is located
 BASE_DIR = Path(__file__).resolve().parent
@@ -48,6 +54,7 @@ def predict_sentiment(request: PredictionRequest):
 
         #4 Map Prediction to label
         sentiment = sentiment_labels[prediction] 
+        save_predictions(request.text, sentiment , round(confidence,2))
 
         return PredictionResponse(
             text=request.text,
@@ -65,6 +72,14 @@ def predict_sentiment(request: PredictionRequest):
         )
 
 
+
+@app.get("/history")
+def view_history(limit: int = 10):
+    rows = get_history(limit)
+    return {
+        "total" : len(rows),
+        "predictions": rows
+    }
 
 
 
