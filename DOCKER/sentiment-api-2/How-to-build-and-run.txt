@@ -10,7 +10,7 @@ docker tag sentiment-api:v1 xxradeonxfx/sentiment-api:v1
 docker push xxradeonxfx/sentiment-api:v1
 
 
-# INSIDE VM
+# INSIDE VM docker Installation:
 curl -fsSL https://get.docker.com | sudo sh
 
 # Docker Pull

@@ -1,0 +1,24 @@
+docker build -t sentiment-api:v1 .
+
+# Run
+docker run -d -p 8000:8000 --name sentiment-app sentiment-api:v1
+
+# Tag
+docker tag sentiment-api:v1 xxradeonxfx/sentiment-api:v1
+
+# Push
+docker push xxradeonxfx/sentiment-api:v1
+
+
+# INSIDE VM docker Installation:
+curl -fsSL https://get.docker.com | sudo sh
+
+# Docker Pull
+sudo docker pull xxradeonxfx/sentiment-api:v1
+sudo docker run -d -p 8000:8000 --name sentiment-app xxradeonxfx/sentiment-api:v1
+
+
+
+
+# AZURE non ARM image:
+docker buildx build --platform linux/amd64 -t xxradeonxfx/sentiment-api:v1 .
