@@ -6,3 +6,4 @@ pycache
 *.db
 .git
 .gitignore
+__pycache__
