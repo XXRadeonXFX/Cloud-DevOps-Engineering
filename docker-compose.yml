@@ -1,22 +1,16 @@
-version: '3.9'
-
 services:
   sentiment-api:
     build:
-      content: .
+      context: ./DOCKER/sentiment-api
       dockerfile: Dockerfile
-    container_name: myfirst-container
+    container_name: my-new-container
     ports:
       - "8000:8000"
-    restart: unless-stopped
     environment:
       - PYTHONUNBUFFERED=1
-    
-    volumes:
     networks:
+      - new-network
 
 networks:
-  app-network:
+  new-network:
     driver: bridge
-volumes:
-  # app-data
