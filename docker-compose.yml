@@ -19,4 +19,4 @@ networks:
   app-network:
     driver: bridge
 volumes:
-  app-data
+  # app-data
