@@ -10,6 +10,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
+                    sh 'cd DOCKER/sentiment-api/ 
                     sh 'docker build -t sentiment-api:v1 .'
                 }
             }
