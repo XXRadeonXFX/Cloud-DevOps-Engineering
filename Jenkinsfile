@@ -28,7 +28,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 script {
-                    // Example deployment step (adjust as needed)
+                    // Example deployment step (adjust as needed).
                     echo 'Deploying to server or cloud...'
                 }
             }
