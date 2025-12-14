@@ -3,11 +3,11 @@ services:
     build:
       context: ./DOCKER/sentiment-api
       dockerfile: Dockerfile
-    container_name: my-new-container
+    container_name: my-container
     ports:
       - "8000:8000"
     environment:
-      - PYTHONUNBUFFERED=1
+      - PTYHONUNBUFFERED=1
     networks:
       - new-network
 

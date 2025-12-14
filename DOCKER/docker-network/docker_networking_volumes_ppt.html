@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Networking & Volumes</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
+        }
+        
+        .slide-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .slide {
+            width: 90%;
+            max-width: 1200px;
+            height: 85vh;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 60px;
+            display: none;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        
+        .slide.active {
+            display: flex;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            font-size: 3em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        h2 {
+            color: #3498db;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            border-bottom: 4px solid #3498db;
+            padding-bottom: 10px;
+        }
+        
+        h3 {
+            color: #e74c3c;
+            font-size: 1.8em;
+            margin: 25px 0 15px 0;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 1.5em;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .box {
+            background: #ecf0f1;
+            border-left: 5px solid #3498db;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+        }
+        
+        .box-green {
+            border-left-color: #27ae60;
+            background: #d5f4e6;
+        }
+        
+        .box-orange {
+            border-left-color: #e67e22;
+            background: #fde3cf;
+        }
+        
+        .box-red {
+            border-left-color: #e74c3c;
+            background: #fadbd8;
+        }
+        
+        .diagram {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .network-item {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 25px;
+            margin: 10px;
+            border-radius: 10px;
+            font-weight: bold;
+            min-width: 150px;
+        }
+        
+        .arrow {
+            font-size: 2em;
+            color: #3498db;
+            margin: 0 15px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.95em;
+        }
+        
+        th {
+            background: #3498db;
+            color: white;
+            padding: 15px;
+            text-align: left;
+        }
+        
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        tr:nth-child(even) {
+            background: #f2f2f2;
+        }
+        
+        code {
+            background: #2c3e50;
+            color: #2ecc71;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        .code-block {
+            background: #2c3e50;
+            color: #2ecc71;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 15px 0;
+            overflow-x: auto;
+            line-height: 1.6;
+        }
+        
+        ul {
+            margin: 15px 0 15px 30px;
+        }
+        
+        li {
+            margin: 10px 0;
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+        
+        .controls {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            gap: 15px;
+        }
+        
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
+        }
+        
+        button:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.6);
+        }
+        
+        .slide-number {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 1.1em;
+        }
+        
+        .emoji {
+            font-size: 1.3em;
+            margin-right: 10px;
+        }
+        
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .center {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <!-- Slide 1: Title -->
+        <div class="slide active">
+            <h1>🐳 Docker Networking & Volumes</h1>
+            <p class="subtitle">Complete DevOps Guide for AI/ML Engineers</p>
+            <div class="diagram">
+                <div style="font-size: 5em; margin: 30px 0;">🌐 ➜ 🐳 ➜ 💾</div>
+                <h3 style="color: #3498db;">Master Container Communication & Data Persistence</h3>
+            </div>
+            <div class="box box-green">
+                <h3><span class="emoji">📚</span>What You'll Learn</h3>
+                <ul>
+                    <li>Docker Networking Fundamentals</li>
+                    <li>Network Drivers & Use Cases</li>
+                    <li>Docker Volumes & Data Persistence</li>
+                    <li>Real-world Docker Compose Examples</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 2: What is Docker Networking? -->
+        <div class="slide">
+            <h2>🌐 What is Docker Networking?</h2>
+            <div class="box box-green">
+                <h3><span class="emoji">💡</span>Simple Explanation</h3>
+                <p style="font-size: 1.2em; line-height: 1.8;">Docker networking allows containers to talk to each other, the host machine, and the internet - just like computers on a network!</p>
+            </div>
+            
+            <div class="diagram">
+                <div style="font-size: 1.3em; line-height: 2;">
+                    <div class="network-item">Container 1<br>🐳 App</div>
+                    <span class="arrow">↔️</span>
+                    <div class="network-item">Container 2<br>🗄️ Database</div>
+                    <span class="arrow">↔️</span>
+                    <div class="network-item">Internet<br>🌍</div>
+                </div>
+            </div>
+
+            <div class="box">
+                <h3><span class="emoji">🔑</span>Key Concepts</h3>
+                <ul>
+                    <li><strong>Network Namespace:</strong> Each container gets its own isolated network (like a separate room)</li>
+                    <li><strong>DNS Resolution:</strong> Containers can talk using names (e.g., "db-container")</li>
+                    <li><strong>Port Mapping:</strong> Connect container ports to host ports (8000:80)</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 3: Network Drivers Overview -->
+        <div class="slide">
+            <h2>🚗 Network Drivers - Types</h2>
+            <table>
+                <tr>
+                    <th>Driver</th>
+                    <th>Use Case</th>
+                    <th>Emoji</th>
+                </tr>
+                <tr>
+                    <td><strong>Bridge</strong> (Default)</td>
+                    <td>Multi-container apps on ONE host (web + DB)</td>
+                    <td>🌉</td>
+                </tr>
+                <tr>
+                    <td><strong>Host</strong></td>
+                    <td>High performance, shares host network</td>
+                    <td>🏠</td>
+                </tr>
+                <tr>
+                    <td><strong>None</strong></td>
+                    <td>Complete isolation, no network</td>
+                    <td>🚫</td>
+                </tr>
+                <tr>
+                    <td><strong>Overlay</strong></td>
+                    <td>Multi-host (Swarm/Kubernetes clusters)</td>
+                    <td>☁️</td>
+                </tr>
+                <tr>
+                    <td><strong>Macvlan</strong></td>
+                    <td>Legacy apps needing own MAC address</td>
+                    <td>🔌</td>
+                </tr>
+            </table>
+
+            <div class="box box-orange">
+                <h3><span class="emoji">⚡</span>Most Used: Bridge Network</h3>
+                <p style="font-size: 1.1em;">Perfect for your ML APIs communicating with databases!</p>
+            </div>
+        </div>
+
+        <!-- Slide 4: Bridge Network Deep Dive -->
+        <div class="slide">
+            <h2>🌉 Bridge Network - Most Important!</h2>
+            
+            <div class="grid-2">
+                <div class="box box-green">
+                    <h3>✅ Default Bridge</h3>
+                    <ul>
+                        <li>Auto-created by Docker</li>
+                        <li>Name: <code>docker0</code></li>
+                        <li>⚠️ NO name resolution</li>
+                        <li>Must use IP addresses</li>
+                    </ul>
+                </div>
+                
+                <div class="box box-green">
+                    <h3>✅ User-Defined Bridge</h3>
+                    <ul>
+                        <li>You create it</li>
+                        <li>✨ HAS name resolution</li>
+                        <li>Better isolation</li>
+                        <li>Recommended!</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="box">
+                <h3><span class="emoji">🛠️</span>Commands</h3>
+                <div class="code-block">
+# Create custom bridge network<br>
+docker network create my-app-network<br><br>
+
+# Run container on this network<br>
+docker run --network my-app-network --name api myapp<br><br>
+
+# Now containers can talk using names!<br>
+# Container "db" can ping "api"
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: Real Example - Docker Compose Networking -->
+        <div class="slide">
+            <h2>🎯 Real Example: Sentiment API + DB</h2>
+            
+            <div class="code-block" style="font-size: 0.9em;">
+version: '3.9'<br><br>
+
+services:<br>
+&nbsp;&nbsp;sentiment-api:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;build: ./sentiment-api<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ports:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- "8000:8000"<br>
+&nbsp;&nbsp;&nbsp;&nbsp;networks:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- app-network<br><br>
+
+&nbsp;&nbsp;postgres-db:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;image: postgres:15<br>
+&nbsp;&nbsp;&nbsp;&nbsp;networks:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- app-network<br><br>
+
+networks:<br>
+&nbsp;&nbsp;app-network:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;driver: bridge
+            </div>
+
+            <div class="box box-green">
+                <h3><span class="emoji">✨</span>What Happens?</h3>
+                <ul>
+                    <li>Docker Compose creates <code>app-network</code></li>
+                    <li>Both services join this network</li>
+                    <li>API can connect to DB using hostname: <code>postgres-db</code></li>
+                    <li>Isolated from other containers!</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 6: Network Commands -->
+        <div class="slide">
+            <h2>⚙️ Essential Network Commands</h2>
+            
+            <div class="box">
+                <h3><span class="emoji">📋</span>List Networks</h3>
+                <div class="code-block">docker network ls</div>
+            </div>
+
+            <div class="box">
+                <h3><span class="emoji">🔍</span>Inspect Network</h3>
+                <div class="code-block">docker network inspect my-app-network</div>
+                <p style="margin-top: 10px;">Shows: Connected containers, IP addresses, configuration</p>
+            </div>
+
+            <div class="box">
+                <h3><span class="emoji">🔗</span>Connect Container to Network</h3>
+                <div class="code-block">docker network connect my-app-network my-container</div>
+            </div>
+
+            <div class="box">
+                <h3><span class="emoji">❌</span>Remove Network</h3>
+                <div class="code-block">docker network rm my-app-network</div>
+            </div>
+        </div>
+
+        <!-- Slide 7: Docker Volumes Introduction -->
+        <div class="slide">
+            <h2>💾 Docker Volumes - Data Persistence</h2>
+            
+            <div class="box box-red">
+                <h3><span class="emoji">⚠️</span>The Problem</h3>
+                <p style="font-size: 1.2em; line-height: 1.8;">When a container stops/dies, ALL data inside is LOST! 😱</p>
+            </div>
+
+            <div class="box box-green">
+                <h3><span class="emoji">✅</span>The Solution: Volumes</h3>
+                <p style="font-size: 1.2em; line-height: 1.8;">Volumes store data OUTSIDE containers, so it persists even if container is deleted!</p>
+            </div>
+
+            <div class="diagram">
+                <div style="font-size: 1.2em; line-height: 2.5;">
+                    <div>🐳 Container (Temporary)</div>
+                    <div class="arrow" style="font-size: 3em;">⬇️</div>
+                    <div>💾 Volume (Permanent Storage)</div>
+                    <div style="margin-top: 20px; color: #27ae60; font-weight: bold;">Data survives container restart! ✅</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: Types of Volumes -->
+        <div class="slide">
+            <h2>📦 3 Types of Data Storage</h2>
+            
+            <div class="box box-green">
+                <h3>1️⃣ Named Volumes (Recommended)</h3>
+                <ul>
+                    <li>Managed by Docker</li>
+                    <li>Stored in: <code>/var/lib/docker/volumes/</code></li>
+                    <li>Easy to backup and share</li>
+                </ul>
+                <div class="code-block">docker volume create my-ml-models<br>
+docker run -v my-ml-models:/app/models myapp</div>
+            </div>
+
+            <div class="box box-orange">
+                <h3>2️⃣ Bind Mounts</h3>
+                <ul>
+                    <li>You choose the exact folder on host</li>
+                    <li>Good for development (live code reload)</li>
+                    <li>Full path needed</li>
+                </ul>
+                <div class="code-block">docker run -v /home/prince/code:/app myapp</div>
+            </div>
+
+            <div class="box">
+                <h3>3️⃣ tmpfs Mounts (In-Memory)</h3>
+                <ul>
+                    <li>Stored in RAM, not disk</li>
+                    <li>Super fast but temporary</li>
+                    <li>Good for secrets/temp files</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 9: Volume Commands -->
+        <div class="slide">
+            <h2>🛠️ Volume Commands</h2>
+            
+            <div class="box">
+                <h3><span class="emoji">➕</span>Create Volume</h3>
+                <div class="code-block">docker volume create ml-models-vol</div>
+            </div>
+
+            <div class="box">
+                <h3><span class="emoji">📋</span>List Volumes</h3>
+                <div class="code-block">docker volume ls</div>
+            </div>
+
+            <div class="box">
+                <h3><span class="emoji">🔍</span>Inspect Volume</h3>
+                <div class="code-block">docker volume inspect ml-models-vol</div>
+                <p style="margin-top: 10px;">Shows: Location on disk, driver, mount point</p>
+            </div>
+
+            <div class="box">
+                <h3><span class="emoji">🗑️</span>Remove Volume</h3>
+                <div class="code-block">docker volume rm ml-models-vol<br><br>
+# Remove all unused volumes<br>
+docker volume prune</div>
+            </div>
+        </div>
+
+        <!-- Slide 10: Real ML Use Case -->
+        <div class="slide">
+            <h2>🤖 ML Project: Model Training Pipeline</h2>
+            
+            <div class="code-block" style="font-size: 0.85em;">
+version: '3.9'<br><br>
+
+services:<br>
+&nbsp;&nbsp;training-job:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;build: ./ml-training<br>
+&nbsp;&nbsp;&nbsp;&nbsp;volumes:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- ml-models:/app/models        # Trained models persist here<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- training-data:/app/data      # Dataset storage<br>
+&nbsp;&nbsp;&nbsp;&nbsp;networks:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- ml-network<br><br>
+
+&nbsp;&nbsp;api-server:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;build: ./api<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ports:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- "8000:8000"<br>
+&nbsp;&nbsp;&nbsp;&nbsp;volumes:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- ml-models:/app/models        # Same volume! Shares models<br>
+&nbsp;&nbsp;&nbsp;&nbsp;networks:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- ml-network<br><br>
+
+volumes:<br>
+&nbsp;&nbsp;ml-models:<br>
+&nbsp;&nbsp;training-data:<br><br>
+
+networks:<br>
+&nbsp;&nbsp;ml-network:
+            </div>
+
+            <div class="box box-green">
+                <h3><span class="emoji">💡</span>Why This Works</h3>
+                <ul>
+                    <li>Training container saves model to volume</li>
+                    <li>API container reads from SAME volume</li>
+                    <li>Both communicate via <code>ml-network</code></li>
+                    <li>Models persist even if containers restart!</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 11: Best Practices -->
+        <div class="slide">
+            <h2>⭐ Best Practices</h2>
+            
+            <div class="box box-green">
+                <h3><span class="emoji">🌐</span>Networking</h3>
+                <ul>
+                    <li>Always use user-defined networks (not default bridge)</li>
+                    <li>Use meaningful network names: <code>backend-net</code>, <code>db-net</code></li>
+                    <li>Separate frontend and backend networks for security</li>
+                    <li>Use Docker Compose for multi-container apps</li>
+                </ul>
+            </div>
+
+            <div class="box box-orange">
+                <h3><span class="emoji">💾</span>Volumes</h3>
+                <ul>
+                    <li>Use named volumes for databases and important data</li>
+                    <li>Use bind mounts for development only</li>
+                    <li>Backup volumes regularly: <code>docker run --volumes-from</code></li>
+                    <li>Clean unused volumes: <code>docker volume prune</code></li>
+                </ul>
+            </div>
+
+            <div class="box">
+                <h3><span class="emoji">🔒</span>Security</h3>
+                <ul>
+                    <li>Don't expose all ports - only what you need</li>
+                    <li>Use environment variables for secrets (or Docker secrets)</li>
+                    <li>Isolate sensitive services on separate networks</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 12: Common Mistakes -->
+        <div class="slide">
+            <h2>❌ Common Mistakes to Avoid</h2>
+            
+            <div class="box box-red">
+                <h3>1️⃣ Using Default Bridge</h3>
+                <p>❌ Default bridge doesn't support name resolution</p>
+                <p>✅ Create user-defined bridge network</p>
+            </div>
+
+            <div class="box box-red">
+                <h3>2️⃣ Not Using Volumes for Data</h3>
+                <p>❌ Storing database data in container = data loss</p>
+                <p>✅ Always mount volumes for databases/ML models</p>
+            </div>
+
+            <div class="box box-red">
+                <h3>3️⃣ Port Conflicts</h3>
+                <p>❌ Multiple containers using same host port (8000:8000)</p>
+                <p>✅ Use different host ports (8000:8000, 8001:8000)</p>
+            </div>
+
+            <div class="box box-red">
+                <h3>4️⃣ Forgetting Network in Compose</h3>
+                <p>❌ Services can't communicate</p>
+                <p>✅ Ensure all services on same network in docker-compose.yml</p>
+            </div>
+        </div>
+
+        <!-- Slide 13: Hands-on Exercise -->
+        <div class="slide">
+            <h2>🎓 Hands-on Exercise</h2>
+            
+            <div class="box box-green">
+                <h3><span class="emoji">🎯</span>Build This: ML API + Redis Cache + PostgreSQL</h3>
+            </div>
+
+            <div class="code-block" style="font-size: 0.75em;">
+version: '3.9'<br><br>
+
+services:<br>
+&nbsp;&nbsp;ml-api:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;build: ./api<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ports: ["8000:8000"]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;volumes:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- models:/app/models<br>
+&nbsp;&nbsp;&nbsp;&nbsp;networks: [backend]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;depends_on: [redis, postgres]<br><br>
+
+&nbsp;&nbsp;redis:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;image: redis:alpine<br>
+&nbsp;&nbsp;&nbsp;&nbsp;networks: [backend]<br><br>
+
+&nbsp;&nbsp;postgres:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;image: postgres:15<br>
+&nbsp;&nbsp;&nbsp;&nbsp;volumes:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- db-data:/var/lib/postgresql/data<br>
+&nbsp;&nbsp;&nbsp;&nbsp;environment:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;POSTGRES_PASSWORD: secret<br>
+&nbsp;&nbsp;&nbsp;&nbsp;networks: [backend]<br><br>
+
+volumes:<br>
+&nbsp;&nbsp;models:<br>
+&nbsp;&nbsp;db-data:<br><br>
+
+networks:<br>
+&nbsp;&nbsp;backend:
+            </div>
+
+            <div class="box">
+                <h3><span class="emoji">✅</span>Task: Make ml-api connect to both Redis and Postgres using their service names!</h3>
+            </div>
+        </div>
+
+        <!-- Slide 14: Summary -->
+        <div class="slide">
+            <h2>📝 Quick Summary</h2>
+            
+            <div class="grid-2">
+                <div class="box box-green">
+                    <h3>🌐 Networking</h3>
+                    <ul>
+                        <li>Bridge = containers on same host</li>
+                        <li>User-defined networks = name resolution</li>
+                        <li>Overlay = multi-host clusters</li>
+                        <li>Always define networks in Compose</li>
+                    </ul>
+                </div>
+                
+                <div class="box box-orange">
+                    <h3>💾 Volumes</h3>
+                    <ul>
+                        <li>Named volumes = production data</li>
+                        <li>Bind mounts = development</li>
+                        <li>Data persists outside containers</li>
+                        <li>Essential for databases/ML models</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="box">
+                <h3><span class="emoji">🚀</span>Next Steps</h3>
+                <ul>
+                    <li>Practice with docker-compose examples</li>
+                    <li>Build the ML API + DB exercise</li>
+                    <li>Explore Kubernetes networking next!</li>
+                    <li>Learn about Docker secrets for production</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 15: Q&A -->
+        <div class="slide">
+            <h1>❓ Questions?</h1>
+            <div class="diagram" style="margin: 50px 0;">
+                <div style="font-size: 6em;">🐳 + 🌐 + 💾 = 🚀</div>
+                <h3 style="color: #3498db; margin-top: 30px;">Docker + Networking + Volumes = DevOps Success!</h3>
+            </div>
+            
+            <div class="box box-green">
+                <h3><span class="emoji">📚</span>Resources</h3>
+                <ul>
+                    <li>Docker Docs: docs.docker.com</li>
+                    <li>Practice: Play with Docker (labs.play-with-docker.com)</li>
+                    <li>GitHub: Search for docker-compose examples</li>
+                </ul>
+            </div>
+
+            <div class="center" style="margin-top: 40px; font-size: 1.5em; color: #7f8c8d;">
+                Happy Containerizing! 🎉
+            </div>
+        </div>
+    </div>
+
+    <div class="slide-number">
+        <span id="current">1</span> / <span id="total">15</span>
+    </div>
+
+    <div class="controls">
+        <button onclick="prevSlide()">◀ Previous</button>
+        <button onclick="nextSlide()">Next ▶</button>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        
+        document.getElementById('total').textContent = totalSlides;
+        
+        function showSlide(n) {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (n + totalSlides) % totalSlides;
+            slides[currentSlide].classList.add('active');
+            document.getElementById('current').textContent = currentSlide + 1;
+        }
+        
+        function nextSlide() {
+            showSlide(currentSlide + 1);
+        }
+        
+        function prevSlide() {
+            showSlide(currentSlide - 1);
+        }
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+        });
+    </script>
+</body>
+</html>
