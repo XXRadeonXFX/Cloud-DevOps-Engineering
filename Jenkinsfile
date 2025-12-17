@@ -85,7 +85,7 @@ pipeline {
 
     post {
         always {
-            echo '🧹 Cleaning up...'
+            echo 'Cleaning up...'
             sh 'docker-compose down || true'
         }
         success {
