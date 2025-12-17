@@ -72,10 +72,10 @@ pipeline {
                           -H "Content-Type: application/json" \
                           -d '{"text": "This is amazing and wonderful!"}')
                         echo "Response: $response"
-                        if echo "$response" | grep -q "sentiment"; then
-                            echo "PASS: Predict endpoint working"
+                        if echo "$response" | grep -q '"sentiment":"Positive"'; then
+                            echo "PASS: Positive sentiment detected correctly"
                         else
-                            echo "FAIL: Predict endpoint failed"
+                            echo "FAIL: Expected Positive sentiment but got something else"
                             exit 1
                         fi
                         
@@ -85,8 +85,26 @@ pipeline {
                           -H "Content-Type: application/json" \
                           -d '{"text": "This is terrible and awful"}')
                         echo "Response: $response"
+                        if echo "$response" | grep -q '"sentiment":"Negative"'; then
+                            echo "PASS: Negative sentiment detected correctly"
+                        else
+                            echo "FAIL: Expected Negative sentiment but got something else"
+                            exit 1
+                        fi
                         
-                        # Test 4: Check history endpoint
+                        # Test 4: Neutral sentiment prediction
+                        echo "Testing neutral sentiment..."
+                        response=$(curl -s -X POST http://localhost:8000/predict \
+                          -H "Content-Type: application/json" \
+                          -d '{"text": "The product is available"}')
+                        echo "Response: $response"
+                        if echo "$response" | grep -q '"sentiment":"Neutral"'; then
+                            echo "PASS: Neutral sentiment detected correctly"
+                        else
+                            echo "WARN: Expected Neutral sentiment"
+                        fi
+                        
+                        # Test 5: Check history endpoint
                         echo "Testing history endpoint..."
                         response=$(curl -s http://localhost:8000/history?limit=5)
                         echo "Response: $response"
@@ -97,7 +115,7 @@ pipeline {
                             exit 1
                         fi
                         
-                        # Test 5: Check second API on port 4000
+                        # Test 6: Check second API on port 4000
                         echo "Testing second API..."
                         response=$(curl -s http://localhost:4000/)
                         echo "Response: $response"
@@ -107,7 +125,17 @@ pipeline {
                             echo "WARN: Second API may not be responding"
                         fi
                         
-                        echo "All API tests completed successfully"
+                        echo "================================"
+                        echo "API TEST SUMMARY"
+                        echo "================================"
+                        echo "Test 1: Root endpoint - PASSED"
+                        echo "Test 2: Positive sentiment - PASSED"
+                        echo "Test 3: Negative sentiment - PASSED"
+                        echo "Test 4: Neutral sentiment - CHECKED"
+                        echo "Test 5: History endpoint - PASSED"
+                        echo "Test 6: Second API - CHECKED"
+                        echo "================================"
+                        echo "All critical API tests completed successfully"
                         
                         # Stop containers after testing
                         docker compose down
