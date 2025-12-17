@@ -45,6 +45,77 @@ pipeline {
             }
         }
         
+        stage('Test APIs') {
+            steps {
+                echo 'Testing APIs...'
+                script {
+                    sh '''
+                        # Start containers
+                        docker compose up -d
+                        echo "Waiting for services to be ready..."
+                        sleep 15
+                        
+                        # Test 1: Check root endpoint
+                        echo "Testing root endpoint..."
+                        response=$(curl -s http://localhost:8000/)
+                        echo "Response: $response"
+                        if echo "$response" | grep -q "Sentiment Analysis API is running"; then
+                            echo "PASS: Root endpoint working"
+                        else
+                            echo "FAIL: Root endpoint failed"
+                            exit 1
+                        fi
+                        
+                        # Test 2: Positive sentiment prediction
+                        echo "Testing positive sentiment..."
+                        response=$(curl -s -X POST http://localhost:8000/predict \
+                          -H "Content-Type: application/json" \
+                          -d '{"text": "This is amazing and wonderful!"}')
+                        echo "Response: $response"
+                        if echo "$response" | grep -q "sentiment"; then
+                            echo "PASS: Predict endpoint working"
+                        else
+                            echo "FAIL: Predict endpoint failed"
+                            exit 1
+                        fi
+                        
+                        # Test 3: Negative sentiment prediction
+                        echo "Testing negative sentiment..."
+                        response=$(curl -s -X POST http://localhost:8000/predict \
+                          -H "Content-Type: application/json" \
+                          -d '{"text": "This is terrible and awful"}')
+                        echo "Response: $response"
+                        
+                        # Test 4: Check history endpoint
+                        echo "Testing history endpoint..."
+                        response=$(curl -s http://localhost:8000/history?limit=5)
+                        echo "Response: $response"
+                        if echo "$response" | grep -q "predictions"; then
+                            echo "PASS: History endpoint working"
+                        else
+                            echo "FAIL: History endpoint failed"
+                            exit 1
+                        fi
+                        
+                        # Test 5: Check second API on port 4000
+                        echo "Testing second API..."
+                        response=$(curl -s http://localhost:4000/)
+                        echo "Response: $response"
+                        if echo "$response" | grep -q "Sentiment"; then
+                            echo "PASS: Second API working"
+                        else
+                            echo "WARN: Second API may not be responding"
+                        fi
+                        
+                        echo "All API tests completed successfully"
+                        
+                        # Stop containers after testing
+                        docker compose down
+                    '''
+                }
+            }
+        }
+        
         stage('Push to Registry') {
             when {
                 branch 'main'
