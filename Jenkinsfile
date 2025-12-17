@@ -20,7 +20,7 @@ pipeline {
                 echo 'Building Docker images...'
                 script {
                     sh '''
-                        docker-compose build
+                        docker compose build
                     '''
                 }
             }
@@ -32,7 +32,7 @@ pipeline {
                 script {
                     sh '''
                         # Test API health
-                        docker-compose up -d
+                        docker compose up -d
                         sleep 10
                         
                         # Test endpoint
@@ -40,7 +40,7 @@ pipeline {
                           -H "Content-Type: application/json" \
                           -d '{"text": "This is great!"}' || exit 1
                         
-                        echo "✅ API test passed!"
+                        echo "API test passed!"
                     '''
                 }
             }
@@ -71,11 +71,11 @@ pipeline {
                 branch 'main'
             }
             steps {
-                echo '🚀 Deploying application...'
+                echo 'Deploying application...'
                 script {
                     sh '''
-                        docker-compose down
-                        docker-compose up -d
+                        docker compose down
+                        docker compose up -d
                         echo "Deployment complete!"
                     '''
                 }
@@ -86,7 +86,7 @@ pipeline {
     post {
         always {
             echo 'Cleaning up...'
-            sh 'docker-compose down || true'
+            sh 'docker compose down || true'
         }
         success {
             echo 'Pipeline succeeded!'
