@@ -145,9 +145,6 @@ pipeline {
         }
         
         stage('Push to Registry') {
-            when {
-                branch 'main'
-            }
             steps {
                 echo 'Pushing to Docker Hub...'
                 script {
@@ -164,9 +161,6 @@ pipeline {
         }
         
         stage('Deploy') {
-            when {
-                branch 'main'
-            }
             steps {
                 echo 'Deploying application...'
                 script {
